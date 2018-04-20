@@ -1,5 +1,6 @@
 FROM ubuntu:14.04
-MAINTAINER John Vivian, jtvivian@gmail.com
+#forked from https://github.com/BD2KGenomics/cgl-docker-lib/tree/master/pizzly
+#forked from John Vivian, jtvivian@gmail.com
 
 # install dependencies first
 RUN apt-get update  && apt-get install -y \
@@ -43,7 +44,19 @@ RUN cmake .. && make
 # Copy to /usr/local/bin because there's no make install rule
 RUN cp pizzly /usr/local/bin
 
-# Boilerplate
-RUN mkdir /data
-WORKDIR /data
+# needed for MGI data mounts
+RUN apt-get update && apt-get install -y libnss-sss && apt-get clean all
+
+#set timezone to CDT
+#LSF: Java bug that need to change the /etc/timezone.
+#/etc/localtime is not enough.
+RUN ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+    echo "America/Chicago" > /etc/timezone && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
+#UUID is needed to be set for some applications
+RUN apt-get update && apt-get install -y dbus && apt-get clean all
+RUN dbus-uuidgen >/etc/machine-id
+
+
 ENTRYPOINT ["pizzly"]
